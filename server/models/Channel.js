@@ -1,11 +1,14 @@
 const mongoose = require('mongoose');
 
+// Comment Schema (for reuse within videos)
 const commentSchema = new mongoose.Schema({
   text: { type: String, required: true },
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   timestamp: { type: Date, default: Date.now },
+  edited: { type: Boolean, default: false }
 });
 
+// Video Schema & Model
 const videoSchema = new mongoose.Schema({
   title: { type: String, required: true },
   description: String,
@@ -15,67 +18,95 @@ const videoSchema = new mongoose.Schema({
   likes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   dislikes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   comments: [commentSchema],
+  channelId: { type: mongoose.Schema.Types.ObjectId, ref: 'Channel' }, // Reference to the channel
 });
 
+
+
+// Channel Schema & Model
 const channelSchema = new mongoose.Schema({
   name: { type: String, required: true },
   description: String,
   owner: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   subscribers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
-  videos: [videoSchema],
+  videos: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Video', default: [] }],// Array of Video references
   profilePic: { type: String, required: false },
 });
 
-// Embedded methods for channel management
-channelSchema.methods.addVideo = function (videoData) {
-  this.videos.push(videoData);
-  return this.save();
-};
-
-channelSchema.methods.editVideo = function (videoId, updatedData) {
-  const video = this.videos.id(videoId);
-  if (video) {
-    Object.assign(video, updatedData);
-    return this.save();
+channelSchema.methods.addVideo = async function (videoData) {
+  const video = new Video(videoData);
+  await video.save(); // Save the video separately
+  
+  console.log("video:", video);
+  console.log("this.videos before push:", this.videos); // Debugging line
+  
+  // Ensure `videos` is initialized as an array
+  if (!Array.isArray(this.videos)) {
+    this.videos = [];
   }
-  return null;
+
+  this.videos.push(video._id); // Add the video ID to the channel's video array
+  await this.save(); // Save the channel with the updated videos array
+  return video; // Return the saved video
 };
 
-channelSchema.methods.deleteVideo = function (videoId) {
-  this.videos.id(videoId).remove();
-  return this.save();
+// Method to delete a video from the channel
+channelSchema.methods.deleteVideo = async function (videoId) {
+  // Remove the video from the `videos` array of the channel
+  this.videos = this.videos.filter(id => id.toString() !== videoId.toString());
+  
+  // Save the channel with the updated videos array
+  await this.save();
+
+  // Delete the video document itself from the `Video` collection
+  await Video.findByIdAndDelete(videoId);
+
+  return { message: 'Video deleted successfully' };
 };
 
-channelSchema.methods.toggleLikeVideo = function (videoId, userId) {
-  const video = this.videos.id(videoId);
-  if (video) {
-    if (video.likes.includes(userId)) {
-      video.likes.pull(userId);
-    } else {
-      video.likes.push(userId);
-      video.dislikes.pull(userId);
-    }
-    return this.save();
+
+// Add Comment
+videoSchema.methods.addComment = async function (userId, text) {
+  const comment = { userId, text }; // Creating a comment object based on schema
+  this.comments.push(comment); // Add the comment to the comments array
+  await this.save(); // Save the video with the updated comments array
+  return comment; // Return the added comment
+};
+
+// Edit Comment
+videoSchema.methods.editComment = async function (commentId, userId, newText) {
+  const comment = this.comments.id(commentId); // Find comment by ID
+  if (!comment) throw new Error('Comment not found');
+  if (comment.userId.toString() !== userId.toString()) {
+    throw new Error('You are not authorized to edit this comment');
   }
-  return null;
+
+  comment.text = newText; // Update the comment's text
+  comment.edited = true;
+  await this.save(); // Save the video with the edited comment
+  return comment; // Return the updated comment
 };
 
-channelSchema.methods.addComment = function (videoId, commentData) {
-  const video = this.videos.id(videoId);
-  if (video) {
-    video.comments.push(commentData);
-    return this.save();
+// Delete Comment
+videoSchema.methods.deleteComment = async function (commentId, userId) {
+  const commentIndex = this.comments.findIndex(c => c._id.toString() === commentId); // Find comment index by ID
+  if (commentIndex === -1) throw new Error('Comment not found'); // Check if comment exists
+  if (this.comments[commentIndex].userId.toString() !== userId.toString()) {
+    throw new Error('You are not authorized to delete this comment');
   }
-  return null;
+
+  // Remove the comment from the comments array
+  this.comments.splice(commentIndex, 1); // Remove the comment by index
+  await this.save(); // Save the video with the updated comments array
+  return { message: 'Comment deleted successfully' };
 };
 
-channelSchema.methods.deleteComment = function (videoId, commentId) {
-  const video = this.videos.id(videoId);
-  if (video) {
-    video.comments.id(commentId).remove();
-    return this.save();
-  }
-  return null;
+// Method to get all comments for a video
+videoSchema.methods.getComments = function () {
+  return this.comments; // Return the comments array
 };
 
-module.exports = mongoose.model('Channel', channelSchema);
+
+const Channel = mongoose.model('Channel', channelSchema); // Independent Channel model
+const Video = mongoose.model('Video', videoSchema); // Independent Video model
+module.exports = { Channel, Video };

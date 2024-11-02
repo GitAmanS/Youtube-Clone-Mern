@@ -14,6 +14,12 @@ exports.registerUser = async (req, res) => {
     try {
       const { username, email, password } = req.body;
 
+      // Check if the user already exists
+      const existingUser = await User.findOne({ $or: [{ username }, { email }] });
+      if (existingUser) {
+        return res.status(400).json({ message: 'User already exists, please login.' });
+      }
+
       // Handle avatar upload
       let avatarUrl = null;
       if (req.file) {
@@ -33,7 +39,7 @@ exports.registerUser = async (req, res) => {
       await user.save();
 
       // Generate token and set cookie
-      const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+      const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '24h' });
       res.cookie('token', token, { httpOnly: true, secure: process.env.NODE_ENV === 'production' }); // Set cookie
 
       res.status(201).json({ message: 'User registered successfully!', user });
@@ -42,6 +48,7 @@ exports.registerUser = async (req, res) => {
     }
   });
 };
+
 
 // Edit User Name or Avatar
 exports.editUser = async (req, res) => {
@@ -98,7 +105,7 @@ exports.loginUser = async (req, res) => {
     }
 
     // Generate token and set cookie
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '24h' });
     res.cookie('token', token, { httpOnly: true, secure: process.env.NODE_ENV === 'production' }); // Set cookie
 
     res.json({ message: 'Login successful', user });

@@ -21,7 +21,7 @@ connectDB(); // Call the connectDB function
 
 // Routes
 app.use('/api/users', userRoutes); // User-related routes
-app.use('/api', channelRoutes)
+app.use('/api/channel', channelRoutes)
 
 // Start the server
 app.listen(PORT, () => {
