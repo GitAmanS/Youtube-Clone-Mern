@@ -1,25 +1,40 @@
-import logo from './logo.svg';
-import './App.css';
+import React, { useEffect, useState } from 'react';
+import Header from './components/Header';
+import Sidebar from './components/Sidebar';
+import VideoCard from './components/VideoCard';
+import CreateChannel from './components/CreateChannel';
+import Home from './components/Home';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import routes from './components/routes';
+import './App.css'
 
-function App() {
+
+
+const App = () => {
+
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+    <Router>
+    <div className="roboto bg-[#0F0F0F] flex">
+      <Header />
+      {/* <Sidebar isCollapsed={true} />  */}
+      <div className="flex-grow p-4">
+        <Routes>
+          {routes.map((route, index) => (
+            <Route
+              key={index}
+              path={route.path}
+              element={<route.component />}
+              exact={route.exact} 
+            />
+          ))}
+        </Routes>
+      </div>
     </div>
+  </Router>
+
+
   );
-}
+};
 
 export default App;

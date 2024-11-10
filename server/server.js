@@ -1,18 +1,23 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const dotenv = require('dotenv');
+const app = express();
 const cors = require('cors');
+app.use(cors({
+  origin: true,        
+  credentials: true    
+}));
 const connectDB = require('./config/db'); // Import the connectDB function
 const userRoutes = require('./routes/userRoutes');
 const channelRoutes = require('./routes/channelRoutes')
 const cookieParser = require('cookie-parser');
 dotenv.config();
 
-const app = express();
+
 const PORT = process.env.PORT || 5000;
 
 // Middleware
-app.use(cors()); // Enable CORS for all routes
+
 app.use(bodyParser.json()); // Parse JSON request bodies
 app.use(cookieParser());
 

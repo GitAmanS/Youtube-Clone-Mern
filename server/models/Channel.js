@@ -19,6 +19,8 @@ const videoSchema = new mongoose.Schema({
   dislikes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   comments: [commentSchema],
   channelId: { type: mongoose.Schema.Types.ObjectId, ref: 'Channel' }, // Reference to the channel
+  channelName: { type: String, required: true }, // New field for channel name
+  channelProfilePic: { type: String },
 });
 
 
@@ -36,7 +38,6 @@ const channelSchema = new mongoose.Schema({
 channelSchema.methods.addVideo = async function (videoData) {
   const video = new Video(videoData);
   await video.save(); // Save the video separately
-  
   console.log("video:", video);
   console.log("this.videos before push:", this.videos); // Debugging line
   

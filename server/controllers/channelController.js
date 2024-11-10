@@ -1,4 +1,5 @@
 const {Channel, Video} = require('../models/Channel');
+const User = require('../models/User')
 const {bucket} = require('../config/firebase'); // Adjust the path as necessary
 const mongoose = require('mongoose');
 const { v4: uuidv4 } = require('uuid'); // For generating unique file names
@@ -12,11 +13,19 @@ exports.createChannel = async (req, res) => {
     // Upload profile picture to Firebase
     const profilePic = req.file ? await uploadToFirebase(req.file) : null;
 
-    const channel = new Channel({ name, description, owner, profilePic });
-    await channel.save();
+    const user = await User.findById(owner);
 
-    res.status(201).json({ message: 'Channel created successfully!', channel });
+
+    
+
+    const channel = new Channel({ name, description, owner, profilePic });
+    await user.channels.push(channel);
+    await user.save();
+    await channel.save();
+    console.log("channel created successfully", channel)
+    res.status(201).json({ message: 'Channel created successfully!', channel, user });
   } catch (error) {
+    console.log("error:",error)
     res.status(500).json({ message: error.message });
   }
 };
@@ -26,6 +35,7 @@ exports.editChannel = async (req, res) => {
   try {
     // const channelId = req.params.channelId;
     const { name, description, channelId } = req.body;
+
 
     const channel = await Channel.findById(channelId);
     if (!channel) {
@@ -41,7 +51,7 @@ exports.editChannel = async (req, res) => {
     if (description) channel.description = description;
     await channel.save();
 
-    res.status(200).json({ message: 'Channel updated successfully!', channel });
+    res.status(200).json({ message: 'Channel updated successfully!', channel, user });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -52,6 +62,10 @@ exports.deleteChannel = async (req, res) => {
   try {
     // const channelId = req.params.channelId;
     const {channelId} = req.body;
+    const owner = req.user.id;
+
+    const user = await User.findById(owner);
+
     const channel = await Channel.findById(channelId);
     if (!channel) {
       return res.status(404).json({ message: 'Channel not found' });
@@ -62,8 +76,10 @@ exports.deleteChannel = async (req, res) => {
       return res.status(403).json({ message: 'You are not authorized to delete this channel' });
     }
 
+    user.channels = [];
+    await user.save();
     await Channel.findByIdAndDelete(channelId);
-    res.status(200).json({ message: 'Channel deleted successfully!' });
+    res.status(200).json({ message: 'Channel deleted successfully!', user });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -73,6 +89,8 @@ exports.deleteChannel = async (req, res) => {
 exports.uploadVideo = async (req, res) => {
     try {
       const { title, description, channelId } = req.body;
+
+      console.log("upload video:", req.body)
   
       // Check if channel exists
       const channel = await Channel.findById(channelId);
@@ -90,7 +108,7 @@ exports.uploadVideo = async (req, res) => {
       const thumbnailUrl = req.files.thumbnail[0] ? await uploadToFirebase(req.files.thumbnail[0]) : null;
   
       // Set video data including channelId reference
-      const videoData = { title, description, videoUrl, thumbnailUrl, channelId };
+      const videoData = { title, description, videoUrl, thumbnailUrl, channelId, channelName:channel.name, channelProfilePic:channel.profilePic };
       const savedVideo = await channel.addVideo(videoData); // Save video
   
       res.status(201).json({ message: 'Video uploaded successfully!', video: savedVideo });
@@ -351,18 +369,20 @@ exports.getAllChannels = async (req, res) => {
 };
 
 exports.getChannelVideos = async(req, res)=>{
-    const {channelId} = req.body;
+    
     try {
         // Find the channel
+        const {channelId} = req.query;
         const channel = await Channel.findById(channelId).populate('videos');
-        console.log("channel videos:", channel)
+        
         if (!channel) {
           return res.status(404).json({ message: 'Channel not found' });
         }
     
-        // Return the videos associated with the channel
-        res.status(200).json(channel.videos);
+
+        res.status(200).json({quantity:channel.videos.length, videos: channel.videos});
       } catch (error) {
+        console.log("error:", error)
         res.status(500).json({ message: error.message });
       }
 }
@@ -390,3 +410,108 @@ exports.checkIsOwner = async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 };
+
+
+
+
+
+exports.fetchSingleVideo = async(req, res)=>{
+  const videoId = req.query.id;
+  console.log("videoId:",req.query.id);
+
+  try{
+    const video = await Video.findById(videoId);
+
+    if(!video){
+      return res.status(404).json({message:"Video Not found"})
+    }
+
+    res.status(200).json(video);
+  } catch(error){
+    console.error("Error fetching video:", error);
+    return res.status(500).json({ message: 'Internal server error' });
+  }
+}
+
+
+
+
+// Search Videos Controller
+exports.searchVideos = async (req, res) => {
+  console.log("this been hit")
+  const { query, page = 1, limit = 10 } = req.query; // Default: page 1, 10 items per page
+  const title = query;
+  console.log('query:', req.query)
+  if (!title) {
+    return res.status(400).json({ message: 'Title query parameter is required' });
+  }
+
+  const pageNumber = parseInt(page, 10);
+  const limitNumber = parseInt(limit, 10);
+  const skip = (pageNumber - 1) * limitNumber;
+
+  try {
+    const videos = await Video.find({
+      title: { $regex: title } 
+    })
+    .skip(skip)
+    .limit(limitNumber);
+
+    const totalVideos = await Video.countDocuments({
+      title: { $regex: title, $options: 'i' }
+    });
+
+    if (!videos.length) {
+      return res.status(404).json({ message: 'No videos found matching the title' });
+    }
+
+    res.status(200).json({
+      page: pageNumber,
+      totalPages: Math.ceil(totalVideos / limitNumber),
+      totalVideos,
+      videos
+    });
+  } catch (error) {
+    console.error("Error searching for videos:", error.message || error);
+    return res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+
+
+
+exports.fetchVideos = async (req, res) => {
+  const page = parseInt(req.query.page, 10) || 1;
+  const limit = parseInt(req.query.limit, 10) || 9;
+  const skip = (page - 1) * limit;
+
+  try {
+    const videos = await Video.find()
+      .skip(skip)
+      .limit(limit)
+      .exec();
+
+    const totalVideos = await Video.countDocuments();
+    const hasMore = (skip + videos.length) < totalVideos;
+
+    console.log("total videos sent:", videos.length)
+
+    return res.status(200).json({
+      videos,
+      hasMore,
+    });
+  } catch (error) {
+    console.error("Error fetching videos:", error);
+    return res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+exports.DeleteAllVideos = async(req,res)=>{
+  try {
+      const result = await Video.deleteMany({}); // Deletes all videos
+      res.status(200).json({ message: 'All videos deleted successfully', result });
+  } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: 'Error deleting videos', error });
+  }
+}

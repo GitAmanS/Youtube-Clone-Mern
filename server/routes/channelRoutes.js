@@ -1,3 +1,4 @@
+// channelRoutes.js
 const express = require('express');
 const upload = require("../config/multer")
 const { authenticateUser } = require('../middleware/auth');
@@ -18,7 +19,7 @@ function multerErrorHandler(err, req, res, next) {
   }
 
 // Route to create a channel
-router.post('/', authenticateUser, upload.single('profilePic'), channelController.createChannel);
+router.post('/', authenticateUser, upload.single('avatar'), channelController.createChannel);
 
 // Route to edit a channel
 router.put('/', authenticateUser, channelController.editChannel);
@@ -67,5 +68,13 @@ router.get('/getAllVideos', channelController.getAllVideos);
 router.get('/channelVideos', channelController.getChannelVideos);
 
 router.get('/checkOwner', authenticateUser, channelController.checkIsOwner);
+
+router.get('/fetchVideos', channelController.fetchVideos);
+
+router.get('/fetchSingleVideo', channelController.fetchSingleVideo)
+
+router.delete('/deleteAllVideos', authenticateUser, channelController.DeleteAllVideos)
+
+router.get('/searchVideos', channelController.searchVideos)
 
 module.exports = router;
