@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 
-const VideoCard = ({ video }) => {
+const VideoCard = ({ video, showTheChannel = true }) => {
 
   const navigate = useNavigate();
   return (
@@ -20,18 +20,18 @@ const VideoCard = ({ video }) => {
       </div>
       <div className="py-4 flex items-start">
         {/* Profile Picture */}
-        <img
+        {showTheChannel&& <img
           src={video.channelProfilePic} // Assuming this is the property for the profile picture
           alt={video.channelName}
           className="w-8 h-8 rounded-full mr-2"
-        />
+        />}
         <div className='flex flex-col'>
           <h3 className="font-medium text-white">{video.title}</h3>
-          <p className="text-[#AAAAAA] text-sm">
+          {showTheChannel && <p className="text-[#AAAAAA] text-sm">
             {video.channelName}{/* This text can be dynamically updated based on the video's upload time */}
-          </p>
+          </p>}
           <p className="text-[#AAAAAA] text-sm">
-            {video.views} • uploaded ago {/* This text can be dynamically updated based on the video's upload time */}
+            {video.views} views • uploaded ago {/* This text can be dynamically updated based on the video's upload time */}
           </p>
         </div>
         

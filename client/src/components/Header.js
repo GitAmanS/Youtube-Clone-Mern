@@ -8,6 +8,7 @@ import { VscAccount } from "react-icons/vsc";
 import SignInRegister from './SignInRegister';
 import ProfileEditModal from './ProfileEditModal';
 import ChannelModal from './ChannelModal';
+import VideoTopics from './VideoTopics';
 const Header = () => {
   const dispatch = useDispatch();
   const user = useSelector((state)=> state.auth.user);  
@@ -187,6 +188,8 @@ const Header = () => {
 
         </div>
       </header>
+
+      
       
       
       <Sidebar isCollapsed={isCollapsed} toggleSidebar={toggleSidebar}/>

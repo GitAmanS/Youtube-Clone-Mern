@@ -5,8 +5,9 @@ import { IoMdPause, IoMdPlay } from "react-icons/io";
 import { MdVolumeOff } from "react-icons/md";
 import { IoMdVolumeHigh } from "react-icons/io";
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchSingleVideo } from '../redux/videoActions';
+import { fetchSingleVideo,getCommentsForVideo, addComment, deleteComment } from '../redux/videoActions';
 import { useParams } from 'react-router-dom';
+
 
 const VideoPlayer = () => {
   const dispatch = useDispatch();
@@ -24,6 +25,46 @@ const VideoPlayer = () => {
   const [dragTime, setDragTime] = useState(0);
   const [descriptionExpanded, setDescriptionExpanded] = useState(false);
 
+
+  const [comments, setComments] = useState([]);
+  const [newComment, setNewComment] = useState('');
+  const [loadingComments, setLoadingComments] = useState(true);
+
+  const fetchComments = async () => {
+    try {
+      setLoadingComments(true);
+      const fetchedComments = await getCommentsForVideo(videoId);
+      setComments(fetchedComments);
+    } catch (error) {
+      console.error("Error fetching comments:", error);
+    } finally {
+      setLoadingComments(false);
+    }
+  };
+
+  const handleAddComment = async () => {
+    if (newComment.trim()) {
+      try {
+        const addedComment = await addComment(videoId, newComment);
+        setComments((prevComments) => [addedComment, ...prevComments]);
+        setNewComment('');
+        fetchComments();
+      } catch (error) {
+        console.error("Error adding comment:", error);
+      }
+    }
+  };
+
+  const handleDeleteComment = async (commentId) => {
+    try {
+      await deleteComment(videoId, commentId);
+      setComments((prevComments) => prevComments.filter(comment => comment.id !== commentId));
+      fetchComments();
+    } catch (error) {
+      console.error("Error deleting comment:", error);
+    }
+  };
+
   const toggleDescription = () => {
     console.log("button clicked")
     setDescriptionExpanded(!descriptionExpanded);
@@ -34,6 +75,7 @@ const VideoPlayer = () => {
       await dispatch(fetchSingleVideo(videoId));
     };
     fetchVideo();
+    fetchComments();
   }, [dispatch, videoId]);
 
   const handleProgress = (progress) => {
@@ -113,13 +155,13 @@ const VideoPlayer = () => {
         onMouseLeave={() => setShowControls(false)}
       >
         {videoToPlay ? (
-          <div>
+          <div className='relative flex items-center justify-center w-full '>
             <ReactPlayer
               ref={playerRef}
               url={videoToPlay.videoUrl}
               playing={playing}
-              width="100%"
-              height="auto"
+              width="auto"
+              height="fit"
               volume={volume}
               muted={muted}
               onProgress={handleProgress}
@@ -216,8 +258,64 @@ const VideoPlayer = () => {
             <button onClick={toggleDescription} className="text-sm font-semibold cursor-pointer mt-2">
                 {descriptionExpanded ? "Show less" : "Show more"}
             </button>
+          </div>
+
+
+                {/* comment section */}
+{/* Comments Section */}
+<div className="w-full p-4 bg-black rounded-lg shadow-md items-start mt-5">
+        {/* Add Comment */}
+        <div className="flex items-start space-x-3 mb-4">
+          <img src="https://via.placeholder.com/40" alt="Profile Pic" className="w-10 h-10 rounded-full" />
+          <input
+            type="text"
+            value={newComment}
+            onChange={(e) => setNewComment(e.target.value)}
+            placeholder="Add a comment..."
+            className="flex-grow text-white p-2 border-b bg-black focus:outline-none"
+          />
+          <button onClick={handleAddComment} className="text-white font-semibold hover:underline">Post</button>
+        </div>
+
+        {/* Comments Loading Spinner */}
+        {loadingComments && (
+          <div className="flex justify-center mb-4">
+            <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+            </svg>
+          </div>
+        )}
+
+        {/* Display Comments */}
+        <div className="space-y-4">
+          {comments.map(comment => (
+            <div key={comment._id} className="flex items-start space-x-3">
+              <img src="https://via.placeholder.com/40" alt="User Profile Pic" className="w-10 h-10 rounded-full" />
+              <div className="flex-1 bg-black p-3 rounded-lg">
+                <div className="flex justify-between items-center mb-1">
+                  <span className="font-semibold text-white">@{comment.username}</span>
+                  <button
+                    onClick={() => handleDeleteComment(comment._id)}
+                    className="text-red-500 hover:text-red-700 text-sm font-semibold"
+                  >
+                    Delete
+                  </button>
+                </div>
+                <p className="text-white">{comment.text}</p>
+              </div>
             </div>
+          ))}
+        </div>
       </div>
+      </div>
+
+
+
+
+
+
+      
     </div>
   );
 };

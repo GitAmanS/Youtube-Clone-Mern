@@ -141,3 +141,67 @@ export const deleteVideo = async (videoId, channelId) => {
     throw error.response?.data || 'Error deleting video';
   }
 };
+
+
+
+// Add Comment
+export const addComment = async (videoId, text) => {
+  try {
+    const response = await axios.post(
+      `http://localhost:5000/api/channel/comments`,
+      { videoId, text },
+      { withCredentials: true }
+    );
+    return response.data;
+  } catch (error) {
+    console.error('Error adding comment:', error);
+    throw error;
+  }
+};
+
+// Get Comments for Video
+export const getCommentsForVideo = async (videoId) => {
+  try {
+    console.log("videoId:", videoId)
+    const response = await axios.get(
+      `http://localhost:5000/api/channel/getComments`,
+      { params: { videoId }, withCredentials: true }
+    );
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching comments:', error);
+    throw error;
+  }
+};
+
+// Edit Comment
+export const editComment = async (videoId, commentId, text) => {
+  try {
+    const response = await axios.put(
+      `http://localhost:5000/api/channel/comments`,
+      { videoId, commentId, text },
+      { withCredentials: true }
+    );
+    return response.data;
+  } catch (error) {
+    console.error('Error editing comment:', error);
+    throw error;
+  }
+};
+
+// Delete Comment
+export const deleteComment = async (videoId, commentId) => {
+  try {
+    const response = await axios.delete(
+      `http://localhost:5000/api/channel/comments`,
+      {
+        data: { videoId, commentId },
+        withCredentials: true,
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.error('Error deleting comment:', error);
+    throw error;
+  }
+};

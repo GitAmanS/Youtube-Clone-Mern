@@ -12,7 +12,7 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
   }
 
   return (
-        <div className={`fixed h-full  ${ !isCollapsed ? "bg-black bg-opacity-30 z-50 w-full":"w-fit"} ${isCollapsed && (location.pathname === "/" || location.pathname === "/channel" || location.pathname === "/path2") && "hidden"}` } >
+        <div className={`fixed h-full z-40 ${ !isCollapsed ? "bg-black bg-opacity-30 z-50 w-full":"w-fit"} ${isCollapsed && ( location.pathname === "/channel" || location.pathname === "/path2") && "hidden"}` } >
                 <div
         className={`h-full fixed bg-[#0F0F0F]  ${
             isCollapsed ? "w-16" : "w-64 z-50"

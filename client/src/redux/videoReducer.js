@@ -15,6 +15,7 @@ const initialState = {
   hasMore: true,
   videoToPlay: null,
   searchResults: [], 
+  comments:[],
 };
 
 const videoReducer = (state = initialState, action) => {

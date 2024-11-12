@@ -256,6 +256,7 @@ exports.deleteComment = async (req, res) => {
   try {
 
     const { videoId, commentId} = req.body;
+    console.log("req.body:", req.body)
     const userId = req.user.id;
 
     const video = await Video.findById(videoId);
@@ -268,6 +269,25 @@ exports.deleteComment = async (req, res) => {
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
+};
+
+
+// Get all comments for a specific video
+exports.getCommentsForVideo = async (req, res) => {
+  try {
+      const { videoId } = req.query; // Assuming videoId is passed as a URL parameter
+
+      console.log("getcomments video:", videoId)
+      const video = await Video.findById(videoId);
+      if (!video) {
+        return res.status(404).json({ message: 'Video not found' });
+      }
+  
+      const comments = video.getComments(); // Use the method to get comments
+      res.status(200).json(comments); // Return the comments as a response
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
 };
 
 // Toggle Like/Dislike
@@ -341,22 +361,7 @@ exports.getAllVideos = async (req, res) => {
     }
 };
 
-// Get all comments for a specific video
-exports.getCommentsForVideo = async (req, res) => {
-    try {
-        const { videoId } = req.body; // Assuming videoId is passed as a URL parameter
-    
-        const video = await Video.findById(videoId);
-        if (!video) {
-          return res.status(404).json({ message: 'Video not found' });
-        }
-    
-        const comments = video.getComments(); // Use the method to get comments
-        res.status(200).json(comments); // Return the comments as a response
-      } catch (error) {
-        res.status(500).json({ message: error.message });
-      }
-};
+
 
 // Get all channels
 exports.getAllChannels = async (req, res) => {

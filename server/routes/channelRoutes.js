@@ -51,6 +51,9 @@ router.delete('/videos', authenticateUser, channelController.deleteVideo);
 // Route to add a comment to a video
 router.post('/comments', authenticateUser, channelController.addComment);
 
+//getting commments for video
+router.get('/getComments', channelController.getCommentsForVideo);
+
 // Route to delete a comment from a video
 router.delete('/comments', authenticateUser, channelController.deleteComment);
 
@@ -61,7 +64,7 @@ router.post('/like', authenticateUser, channelController.toggleLikeVideo);
 
 router.get('/getAllChannels', channelController.getAllChannels);
 
-router.get('/getComments', channelController.getCommentsForVideo);
+
 
 router.get('/getAllVideos', channelController.getAllVideos);
 

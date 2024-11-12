@@ -4,6 +4,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { fetchVideos } from '../redux/videoActions';
 import InfiniteScroll from 'react-infinite-scroll-component';
 import { useNavigate } from 'react-router-dom';
+import VideoTopics from './VideoTopics';
 
 const Home = () => {
   const dispatch = useDispatch();
@@ -25,7 +26,9 @@ const Home = () => {
   };
 
   return (
-    <div className="flex min-h-screen h-auto">
+    <div className="flex flex-col min-h-screen h-auto">
+      <VideoTopics/>
+
       <main className="flex-grow ml-16 p-4">
         <InfiniteScroll
           dataLength={videos.length} // Current length of videos in the state

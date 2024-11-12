@@ -86,7 +86,7 @@ const ChannelPage = () => {
             videos.length !== 0 ? (
             <div className="grid grid-cols-3 w-full mt-4 gap-4">
                 {videos.map((video) => (
-                <VideoCard key={video._id} video={video} />
+                <VideoCard key={video._id} video={video} showTheChannel={false}/>
                 ))}
             </div>
             ) : (
@@ -95,14 +95,14 @@ const ChannelPage = () => {
         )}
         {activeTab === "Videos" && (
             videos.length !== 0 ? (
-            <div className="grid grid-cols-3 mt-20 gap-4">
-                {videos.map((video) => (
-                <VideoCard key={video._id} video={video} />
-                ))}
-            </div>
-            ) : (
-            <div className='text-white'>Videos not available</div>
-            )
+              <div className="grid grid-cols-3 w-full mt-4 gap-4">
+                  {videos.map((video) => (
+                  <VideoCard key={video._id} video={video} showTheChannel={false}/>
+                  ))}
+              </div>
+              ) : (
+              <div className='text-white'>Videos not available</div>
+              )
         )}
         {activeTab === "About" && <p className='text-gray-500 w-full text-start h-full mb-auto mt-4'>{channel?.description}</p>}
       </div>
