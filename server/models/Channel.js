@@ -21,7 +21,7 @@ const videoSchema = new mongoose.Schema({
   channelId: { type: mongoose.Schema.Types.ObjectId, ref: 'Channel' }, // Reference to the channel
   channelName: { type: String, required: true }, // New field for channel name
   channelProfilePic: { type: String },
-});
+}, { timestamps: true });
 
 
 
@@ -63,6 +63,36 @@ channelSchema.methods.deleteVideo = async function (videoId) {
   await Video.findByIdAndDelete(videoId);
 
   return { message: 'Video deleted successfully' };
+};
+
+
+channelSchema.methods.editVideo = async function (videoId, updatedData) {
+  // Find the video by ID
+  const video = await Video.findById(videoId);
+  if (!video) {
+    throw new Error('Video not found');
+  }
+
+  // Ensure that the video belongs to this channel (optional)
+  if (!this.videos.includes(videoId)) {
+    throw new Error('Video does not belong to this channel');
+  }
+
+  // Update the video with the new data (title, description, etc.)
+  Object.assign(video, updatedData); // Merge the updated data into the video document
+  await video.save(); // Save the updated video
+
+  // If thumbnail URL was updated, update the video object with the new thumbnail URL
+  if (updatedData.thumbnailUrl) {
+    video.thumbnailUrl = updatedData.thumbnailUrl;
+    await video.save();
+  }
+
+  // Save the updated video to the channel's `videos` array (if needed)
+  // Since the `videoId` is already in the channel's `videos` array, no need to add it again
+  await this.save(); // Save the channel with the updated video details (though the `videos` array remains unchanged)
+
+  return video; // Return the updated video
 };
 
 

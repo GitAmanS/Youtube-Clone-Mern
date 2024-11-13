@@ -7,6 +7,7 @@ import { IoMdVolumeHigh } from "react-icons/io";
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchSingleVideo,getCommentsForVideo, addComment, deleteComment } from '../redux/videoActions';
 import { useParams } from 'react-router-dom';
+import timeAgo from './timeAgo';
 
 
 const VideoPlayer = () => {
@@ -46,7 +47,6 @@ const VideoPlayer = () => {
     if (newComment.trim()) {
       try {
         const addedComment = await addComment(videoId, newComment);
-        setComments((prevComments) => [addedComment, ...prevComments]);
         setNewComment('');
         fetchComments();
       } catch (error) {
@@ -155,62 +155,62 @@ const VideoPlayer = () => {
         onMouseLeave={() => setShowControls(false)}
       >
         {videoToPlay ? (
-          <div className='relative flex items-center justify-center w-full '>
-            <ReactPlayer
-              ref={playerRef}
-              url={videoToPlay.videoUrl}
-              playing={playing}
-              width="auto"
-              height="fit"
-              volume={volume}
-              muted={muted}
-              onProgress={handleProgress}
-              onDuration={handleDuration}
-            />
-            {/* Video player bar */}
-            <div
-              className={`absolute bottom-0 left-0 right-0 bg-black bg-opacity-20 p-3 px-4 flex flex-col items-center justify-between transition-transform duration-300 ease-in-out ${
-                showControls ? 'translate-y-0' : 'translate-y-full'
-              }`}
-            >
-              <div
-                className="relative w-full mx-4 h-1 mb-2 bg-gray-300 bg-opacity-30 cursor-pointer"
-                ref={timelineRef}
-                onMouseDown={handleMouseDown}
-              >
-                <div
-                  className="absolute top-0 left-0 h-full bg-red-600"
-                  style={{ width: `${(currentTime / duration) * 100}%` }}
-                />
-                <div
-                  className="absolute top-0.5 h-3 w-3 rounded-full bg-red-600 -translate-y-1/2 cursor-pointer"
-                  style={{ left: `${(currentTime / duration) * 100}%` }}
-                />
-              </div>
-              <div className="flex flex-row w-full">
-                <button onClick={togglePlaying} className="text-white text-2xl">
-                  {playing ? <IoMdPause /> : <IoMdPlay />}
-                </button>
-                <div className="relative flex mr-auto mx-8 items-center group">
-                  <button onClick={toggleMute} className="text-white text-2xl">
-                    {muted || volume === 0 ? <MdVolumeOff /> : <IoMdVolumeHigh />}
-                  </button>
-                  <input
-                    type="range"
-                    min="0"
-                    max="1"
-                    step="0.01"
-                    value={volume}
-                    onChange={handleVolumeChange}
-                    className="absolute ml-8 opacity-0 group-hover:opacity-100 w-0 group-hover:w-16 h-0.5 bg-white appearance-none transition-all duration-300 ease-in-out"
-                  />
-                </div>
-                <button onClick={handleFullscreen} className="text-white text-4xl">
-                  <MdFullscreen />
-                </button>
-              </div>
-            </div>
-          </div>
+          <div className="relative flex items-center justify-center w-full" style={{ paddingTop: '56.25%' }}>
+  <ReactPlayer
+    ref={playerRef}
+    url={videoToPlay.videoUrl}
+    playing={playing}
+    width="100%"  // Make the player take up full width of the container
+    height="100%" // Ensure the height is constrained to the container’s aspect ratio
+    volume={volume}
+    muted={muted}
+    onProgress={handleProgress}
+    onDuration={handleDuration}
+    style={{ position: 'absolute', top: 0, left: 0 }}  // Absolute positioning to fit within the container
+  />
+  {/* Video player bar */}
+  <div
+    className={`absolute bottom-0 left-0 right-0 bg-black bg-opacity-20 p-3 px-4 flex flex-col items-center justify-between transition-transform duration-300 ease-in-out ${showControls ? 'translate-y-0' : 'translate-y-full'}`}
+  >
+    <div
+      className="relative w-full mx-4 h-1 mb-2 bg-gray-300 bg-opacity-30 cursor-pointer"
+      ref={timelineRef}
+      onMouseDown={handleMouseDown}
+    >
+      <div
+        className="absolute top-0 left-0 h-full bg-red-600"
+        style={{ width: `${(currentTime / duration) * 100}%` }}
+      />
+      <div
+        className="absolute top-0.5 h-3 w-3 rounded-full bg-red-600 -translate-y-1/2 cursor-pointer"
+        style={{ left: `${(currentTime / duration) * 100}%` }}
+      />
+    </div>
+    <div className="flex flex-row w-full">
+      <button onClick={togglePlaying} className="text-white text-2xl">
+        {playing ? <IoMdPause /> : <IoMdPlay />}
+      </button>
+      <div className="relative flex mr-auto mx-8 items-center group">
+        <button onClick={toggleMute} className="text-white text-2xl">
+          {muted || volume === 0 ? <MdVolumeOff /> : <IoMdVolumeHigh />}
+        </button>
+        <input
+          type="range"
+          min="0"
+          max="1"
+          step="0.01"
+          value={volume}
+          onChange={handleVolumeChange}
+          className="absolute ml-8 opacity-0 group-hover:opacity-100 w-0 group-hover:w-16 h-0.5 bg-white appearance-none transition-all duration-300 ease-in-out"
+        />
+      </div>
+      <button onClick={handleFullscreen} className="text-white text-4xl">
+        <MdFullscreen />
+      </button>
+    </div>
+  </div>
+</div>
+
         ) : (
           <p className="text-white">Loading...</p>
         )}
@@ -291,18 +291,21 @@ const VideoPlayer = () => {
         <div className="space-y-4">
           {comments.map(comment => (
             <div key={comment._id} className="flex items-start space-x-3">
-              <img src="https://via.placeholder.com/40" alt="User Profile Pic" className="w-10 h-10 rounded-full" />
+              <img src={comment.userId.avatar} alt="User Profile Pic" className="w-10 h-10 rounded-full" />
               <div className="flex-1 bg-black p-3 rounded-lg">
                 <div className="flex justify-between items-center mb-1">
-                  <span className="font-semibold text-white">@{comment.username}</span>
-                  <button
+                  
+                  <span className="font-semibold text-white">@{comment.userId.username}</span>
+                  <span className='text-white text-xs'>{timeAgo(comment.timestamp)}</span>
+
+                </div>
+                <p className="text-white">{comment.text}</p>
+                <button
                     onClick={() => handleDeleteComment(comment._id)}
                     className="text-red-500 hover:text-red-700 text-sm font-semibold"
                   >
                     Delete
                   </button>
-                </div>
-                <p className="text-white">{comment.text}</p>
               </div>
             </div>
           ))}

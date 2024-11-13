@@ -123,6 +123,8 @@ exports.editVideo = async (req, res) => {
   try {
     const { title, description, channelId, videoId } = req.body;
 
+    console.log(req.body)
+
     const channel = await Channel.findById(channelId);
     if (!channel) {
       return res.status(404).json({ message: 'Channel not found' });
@@ -137,8 +139,8 @@ exports.editVideo = async (req, res) => {
     if (title) updatedData.title = title;
     if (description) updatedData.description = description;
 
-    // Handle thumbnail upload
-    if (req.files.thumbnail) {
+    // Only handle thumbnail upload if the thumbnail is provided in the request
+    if (req.files && req.files.thumbnail) {
       updatedData.thumbnailUrl = await uploadToFirebase(req.files.thumbnail);
     }
 
@@ -149,14 +151,18 @@ exports.editVideo = async (req, res) => {
 
     res.status(200).json({ message: 'Video updated successfully!', video: updatedVideo });
   } catch (error) {
+    console.log("error:", error);
     res.status(500).json({ message: error.message });
   }
 };
 
+
 // Delete Video
 exports.deleteVideo = async (req, res) => {
     try {
-        const { channelId, videoId } = req.body;
+        const { channelId, videoId } = req.query;
+
+        console.log("reqbody:", req.body)
 
         // Find the channel
         const channel = await Channel.findById(channelId);
@@ -272,23 +278,32 @@ exports.deleteComment = async (req, res) => {
 };
 
 
-// Get all comments for a specific video
+// Get all comments for a specific video with populated user info
 exports.getCommentsForVideo = async (req, res) => {
   try {
-      const { videoId } = req.query; // Assuming videoId is passed as a URL parameter
+    const { videoId } = req.query; // Assuming videoId is passed as a URL parameter
 
-      console.log("getcomments video:", videoId)
-      const video = await Video.findById(videoId);
-      if (!video) {
-        return res.status(404).json({ message: 'Video not found' });
-      }
-  
-      const comments = video.getComments(); // Use the method to get comments
-      res.status(200).json(comments); // Return the comments as a response
-    } catch (error) {
-      res.status(500).json({ message: error.message });
+    console.log("getcomments video:", videoId);
+
+    // Fetch the video and populate user data for each comment
+    const video = await Video.findById(videoId)
+      .populate({
+        path: 'comments.userId', // Populate the userId inside the comments array
+        select: 'username avatar' // Specify which user fields to include
+      });
+
+    if (!video) {
+      return res.status(404).json({ message: 'Video not found' });
     }
+
+    // Return the populated comments as a response
+    res.status(200).json(video.comments);
+  } catch (error) {
+    console.log("error:", error)
+    res.status(500).json({ message: error.message });
+  }
 };
+
 
 // Toggle Like/Dislike
 exports.toggleLikeVideo = async (req, res) => {

@@ -101,17 +101,9 @@ export const uploadVideo = async (formData) => {
 
 
 
-export const editVideo = async (videoId, videoData) => {
+export const editVideo = async (formData) => {
   try {
-    const formData = new FormData();
-    formData.append('title', videoData.title);
-    formData.append('description', videoData.description);
-    formData.append('channelId', videoData.channelId);
-    formData.append('videoId', videoId);
-    
-    if (videoData.thumbnailFile) {
-      formData.append('thumbnail', videoData.thumbnailFile);
-    }
+
 
     const response = await axios.put(`http://localhost:5000/api/channel/videos`, formData, {
       headers: {
@@ -132,8 +124,10 @@ export const editVideo = async (videoId, videoData) => {
 export const deleteVideo = async (videoId, channelId) => {
   try {
     const response = await axios.delete('http://localhost:5000/api/channel/videos', {
-      videoId,
-      channelId,
+      params: {
+        videoId,  
+        channelId 
+      }
     });
     return response.data; // Returns success message after deletion
   } catch (error) {

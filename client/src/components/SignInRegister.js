@@ -45,8 +45,10 @@ const SignInRegister = ({ isOpen, onClose }) => {
 
     if (isSignIn) {
       dispatch(loginUser({ email, password }));
+      onClose()
     } else {
       dispatch(registerUser(formData));
+      onClose()
     }
   };
 

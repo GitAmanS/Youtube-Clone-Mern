@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { uploadVideo, editVideo } from '../redux/videoActions';
+import { uploadVideo, editVideo} from '../redux/videoActions';
 import { useDispatch, useSelector } from 'react-redux';
+import { getChannelVideos } from '../redux/channelActions';
 
 const VideoModal = ({ showVideoModal, toggleVideoModal, video = null, channelId }) => {
   const [title, setTitle] = useState('');
@@ -10,9 +11,8 @@ const VideoModal = ({ showVideoModal, toggleVideoModal, video = null, channelId 
   const [thumbnailFile, setThumbnailFile] = useState(null);
   const [loading, setLoading] = useState(false);
   const channel = useSelector((state) => state.auth.mychannel);
-  const dispatch = useDispatch(); // Correct place to call useDispatch
+  const dispatch = useDispatch();
 
-  // Effect to set fields when the video prop is provided (for editing)
   useEffect(() => {
     if (video && video._id) {
       setTitle(video?.title || '');
@@ -42,17 +42,23 @@ const VideoModal = ({ showVideoModal, toggleVideoModal, video = null, channelId 
     formData.append('description', description);
     formData.append('channelId', channelId);
     formData.append('video', videoFile);
-    if (thumbnailFile) formData.append('thumbnail', thumbnailFile);
+    if (thumbnailFile) {
+      formData.append('thumbnail', thumbnailFile)
+      console.log("we did add the thumbnail file")
+    };
 
     try {
       if (video && video._id) {
-        // Editing an existing video
-        await dispatch(editVideo(formData));  // Use dispatch here, no need to store the response
+        formData.append('videoId', video._id)
+        await editVideo(formData);
+        toggleVideoModal()
+        dispatch(getChannelVideos(channelId))
       } else {
-        // Uploading a new video
-        await dispatch(uploadVideo(formData));  // Use dispatch here, no need to store the response
+        await uploadVideo(formData);
+        toggleVideoModal()
+        dispatch(getChannelVideos(channelId))
       }
-      toggleVideoModal(); // Close the modal after submitting
+      toggleVideoModal();
     } catch (error) {
       console.log('Error: ' + error.message);
     } finally {
@@ -62,9 +68,15 @@ const VideoModal = ({ showVideoModal, toggleVideoModal, video = null, channelId 
 
   return (
     <div
-      className={`fixed inset-0 flex items-center justify-center z-50 bg-gray-500 bg-opacity-50 transition-opacity ${showVideoModal ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+      onClick={toggleVideoModal}
+      className={`fixed inset-0 flex items-center justify-center z-40 bg-gray-500 bg-opacity-50 transition-opacity ${
+        showVideoModal ? 'opacity-100' : 'opacity-0 pointer-events-none'
+      }`}
     >
-      <div className="bg-white p-6 rounded-lg w-full max-w-md">
+      <div
+        className="z-50 bg-white p-6 rounded-lg w-full max-w-md relative"
+        onClick={(e) => e.stopPropagation()} // I have prevented event bubling here \
+      >
         <button className="absolute top-4 right-4 text-2xl" onClick={toggleVideoModal}>
           &times;
         </button>
@@ -95,7 +107,7 @@ const VideoModal = ({ showVideoModal, toggleVideoModal, video = null, channelId 
               <input
                 type="file"
                 onChange={handleVideoChange}
-                required={!video} // Video file is required only for upload
+                required={!video}
                 className="mt-1 block w-full text-sm text-gray-900 file:border file:border-gray-300 file:rounded-md file:px-4 file:py-2 file:text-sm file:font-medium file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
               />
             </div>
